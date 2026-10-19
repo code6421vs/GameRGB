@@ -1,5 +1,7 @@
 # 安裝與首次啟動
 
+**繁體中文** | [English](INSTALLATION.en.md)
+
 ## 從原始碼建立可執行版本
 
 先安裝 .NET 10 SDK、PowerShell 與 Microsoft Visual C++ 2015–2022 Redistributable (x64)。下載並解壓縮 repository 後雙擊 `setup.cmd`，或在 repository 根目錄執行：

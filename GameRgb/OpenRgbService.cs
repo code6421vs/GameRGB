@@ -57,7 +57,7 @@ public sealed class OpenRgbService:IDisposable
  }
  public void Prepare(IEnumerable<int> ids)
  {
-  var c=client??throw new InvalidOperationException("尚未連線至 OpenRGB。");
+  var c=client??throw new InvalidOperationException(Loc.T("尚未連線至 OpenRGB。","Not connected to OpenRGB."));
   if(restoreProfile is null)
   {
    var profile="GameRGB_AutoRestore_"+Guid.NewGuid().ToString("N");
@@ -69,15 +69,15 @@ public sealed class OpenRgbService:IDisposable
  {
   var errors=new List<string>();var profile=Interlocked.Exchange(ref restoreProfile,null);if(profile is null)return errors;
   var c=client;
-  if(c is null&&lastHost is not null)try{c=new OpenRgbClient(lastHost,lastPort,"GameRGB Restore",true,2500);client=c;}catch(Exception ex){errors.Add("重新連線失敗："+ex.Message);return errors;}
-  if(c is null){errors.Add("OpenRGB 連線已中斷");return errors;}
-  try{c.LoadProfile(profile);}catch(Exception ex){errors.Add("載入還原設定檔："+ex.Message);return errors;}
-  try{c.DeleteProfile(profile);}catch(Exception ex){errors.Add("清理臨時設定檔："+ex.Message);}
+  if(c is null&&lastHost is not null)try{c=new OpenRgbClient(lastHost,lastPort,"GameRGB Restore",true,2500);client=c;}catch(Exception ex){errors.Add(Loc.T("重新連線失敗：","Reconnection failed: ")+ex.Message);return errors;}
+  if(c is null){errors.Add(Loc.T("OpenRGB 連線已中斷","OpenRGB connection was lost"));return errors;}
+  try{c.LoadProfile(profile);}catch(Exception ex){errors.Add(Loc.T("載入還原設定檔：","Loading restore profile: ")+ex.Message);return errors;}
+  try{c.DeleteProfile(profile);}catch(Exception ex){errors.Add(Loc.T("清理臨時設定檔：","Removing temporary profile: ")+ex.Message);}
   return errors;
  }
  public void Update(IEnumerable<int> ids,AudioBands b,LightingMode mode,LightingPaint paint,LightingDirection direction)
  {
-  var c=client??throw new InvalidOperationException("OpenRGB 連線已中斷。");
+  var c=client??throw new InvalidOperationException(Loc.T("OpenRGB 連線已中斷。","OpenRGB connection was lost."));
   foreach(var id in ids)
   {
    if(!counts.TryGetValue(id,out int n)||n==0)continue;

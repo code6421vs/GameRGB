@@ -1,5 +1,7 @@
 # Contributing to GameRGB
 
+**繁體中文** | [English](CONTRIBUTING.en.md)
+
 感謝協助改善 GameRGB。提交前請先閱讀 `AGENTS.md` 的 repository 慣例，以及 `docs/BUILDING.md` 的環境準備方式。
 
 1. 從短而明確的 branch 開始，避免在同一個變更混入無關格式調整。

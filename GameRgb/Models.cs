@@ -14,3 +14,4 @@ public readonly record struct LightingColor(byte Red,byte Green,byte Blue);
 public readonly record struct LightingPaint(LightingColor Start,LightingColor End,bool IsGradient);
 public enum LightingMode{ThreeBand,VuMeter,SolidPulse,MonoRing,StaticColor}
 public enum LightingDirection{LeftToRight,RightToLeft}
+public enum AppLanguage{TraditionalChinese,English}

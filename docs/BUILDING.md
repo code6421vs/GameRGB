@@ -1,5 +1,7 @@
 # 建置指南
 
+**繁體中文** | [English](BUILDING.en.md)
+
 ## 必要工具
 
 - Windows 10 2004+ 或 Windows 11 x64

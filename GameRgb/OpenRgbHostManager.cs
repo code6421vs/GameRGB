@@ -16,11 +16,11 @@ public sealed class OpenRgbHostManager : IAsyncDisposable
         if (await CanConnectAsync(host, port, TimeSpan.FromMilliseconds(500), token))
         {
             connectedToWindowsService = IsOpenRgbWindowsServiceRunning();
-            return "已連接現有的 OpenRGB Server。";
+            return Loc.T("已連接現有的 OpenRGB Server。", "Connected to an existing OpenRGB Server.");
         }
 
         if (!IsLocalHost(host))
-            throw new InvalidOperationException($"遠端 OpenRGB Server {host}:{port} 無法連線，GameRGB 不會在本機代為啟動遠端服務。");
+            throw new InvalidOperationException(Loc.T($"遠端 OpenRGB Server {host}:{port} 無法連線，GameRGB 不會在本機代為啟動遠端服務。", $"Could not connect to remote OpenRGB Server {host}:{port}; GameRGB will not start a local replacement for a remote server."));
 
         var executable = FindOpenRgbExecutable();
         var directory = Path.GetDirectoryName(executable)!;
@@ -32,7 +32,7 @@ public sealed class OpenRgbHostManager : IAsyncDisposable
             CreateNoWindow = true,
             WindowStyle = ProcessWindowStyle.Hidden,
             Arguments = $"--localconfig --server --server-host 127.0.0.1 --server-port {port}"
-        }) ?? throw new InvalidOperationException("無法啟動本機的 OpenRGB Server。");
+        }) ?? throw new InvalidOperationException(Loc.T("無法啟動本機的 OpenRGB Server。", "Could not start the local OpenRGB Server."));
         ownedProcess = process;
         DiagnosticsLog.Write($"已啟動本機 OpenRGB Server：{executable} (PID {process.Id})");
 
@@ -45,7 +45,7 @@ public sealed class OpenRgbHostManager : IAsyncDisposable
                 var exitCode = process.ExitCode;
                 process.Dispose();
                 ownedProcess = null;
-                throw new InvalidOperationException($"OpenRGB Server 提前結束，結束碼：{exitCode}。");
+                throw new InvalidOperationException(Loc.T($"OpenRGB Server 提前結束，結束碼：{exitCode}。", $"OpenRGB Server exited early with code {exitCode}."));
             }
             if (await CanConnectAsync("127.0.0.1", port, TimeSpan.FromMilliseconds(300), token))
             {
@@ -56,14 +56,14 @@ public sealed class OpenRgbHostManager : IAsyncDisposable
                 // settle before MainWindow asks for controller data.
                 await Task.Delay(TimeSpan.FromSeconds(3), token);
                 if (process.HasExited)
-                    throw new InvalidOperationException($"OpenRGB Server 在硬體掃描期間結束，結束碼：{process.ExitCode}。");
-                return "OpenRGB Server 已啟動並完成硬體掃描。";
+                    throw new InvalidOperationException(Loc.T($"OpenRGB Server 在硬體掃描期間結束，結束碼：{process.ExitCode}。", $"OpenRGB Server exited during hardware discovery with code {process.ExitCode}."));
+                return Loc.T("OpenRGB Server 已啟動並完成硬體掃描。", "OpenRGB Server started and completed hardware discovery.");
             }
             await Task.Delay(250, token);
         }
 
         await StopAsync();
-        throw new TimeoutException("等待 OpenRGB Server 啟動逾時。");
+        throw new TimeoutException(Loc.T("等待 OpenRGB Server 啟動逾時。", "Timed out waiting for OpenRGB Server to start."));
     }
 
     public async Task StopAsync()
@@ -90,9 +90,9 @@ public sealed class OpenRgbHostManager : IAsyncDisposable
         var result = await Task.Run(() => RunServiceCommand("stop", "OpenRGB"));
         DiagnosticsLog.Write(result.ExitCode == 0
             ? "OpenRGB Windows 服務已停止，已釋放 RGB 裝置"
-            : "無法停止 OpenRGB Windows 服務：" + result.Message);
+            : Loc.T("無法停止 OpenRGB Windows 服務：", "Could not stop the OpenRGB Windows service: ") + result.Message);
         if (result.ExitCode != 0)
-            throw new InvalidOperationException("無法停止 OpenRGB Windows 服務：" + result.Message);
+            throw new InvalidOperationException(Loc.T("無法停止 OpenRGB Windows 服務：", "Could not stop the OpenRGB Windows service: ") + result.Message);
     }
 
     static string FindOpenRgbExecutable()
@@ -102,7 +102,7 @@ public sealed class OpenRgbHostManager : IAsyncDisposable
 
         var installed = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "OpenRGB", "OpenRGB.exe");
         if (File.Exists(installed)) return installed;
-        throw new FileNotFoundException("找不到下載或已安裝的 OpenRGB.exe。請先執行 setup.ps1，或安裝 OpenRGB。", bundled);
+        throw new FileNotFoundException(Loc.T("找不到下載或已安裝的 OpenRGB.exe。請先執行 setup.ps1，或安裝 OpenRGB。", "Downloaded or installed OpenRGB.exe was not found. Run setup.ps1 or install OpenRGB."), bundled);
     }
 
     static bool IsLocalHost(string host) => host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
@@ -126,17 +126,17 @@ public sealed class OpenRgbHostManager : IAsyncDisposable
             CreateNoWindow = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true
-        }) ?? throw new InvalidOperationException("無法執行 Windows 服務控制程式。");
+        }) ?? throw new InvalidOperationException(Loc.T("無法執行 Windows 服務控制程式。", "Could not run the Windows service control utility."));
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
         if (!process.WaitForExit(10000))
         {
             process.Kill(entireProcessTree: true);
-            return (-1, "服務操作逾時");
+            return (-1, Loc.T("服務操作逾時", "Service operation timed out"));
         }
         Task.WaitAll(output, error);
         var message = string.Join(" ", output.Result, error.Result).Replace('\r', ' ').Replace('\n', ' ').Trim();
-        return (process.ExitCode, string.IsNullOrWhiteSpace(message) ? $"sc.exe 結束碼 {process.ExitCode}" : message);
+        return (process.ExitCode, string.IsNullOrWhiteSpace(message) ? Loc.T($"sc.exe 結束碼 {process.ExitCode}", $"sc.exe exit code {process.ExitCode}") : message);
     }
 
     static async Task<bool> CanConnectAsync(string host, int port, TimeSpan timeout, CancellationToken token)

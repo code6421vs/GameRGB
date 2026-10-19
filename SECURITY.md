@@ -1,5 +1,7 @@
 # Security Policy
 
+**繁體中文** | [English](SECURITY.en.md)
+
 ## Reporting a vulnerability
 
 請不要在公開 issue 貼出可利用細節、憑證或完整診斷記錄。請透過 GitHub repository 的 **Security → Report a vulnerability** 私下回報；若尚未啟用 private vulnerability reporting，請聯絡 repository 擁有者並只提供最少必要資訊。

@@ -64,7 +64,7 @@ public sealed class RgbConflictManager
                     // process running made no change and needs no later restore.
                     if (result.ExitCode != 0 && IsProcessRunning(processName))
                         stoppedServices.Remove(serviceName);
-                    errors.Add($"無法停止 {serviceName}：{result.Message}");
+                    errors.Add(Loc.T($"無法停止 {serviceName}：{result.Message}", $"Could not stop {serviceName}: {result.Message}"));
                 }
             }
 
@@ -76,14 +76,14 @@ public sealed class RgbConflictManager
                 try
                 {
                     var status = NtSuspendProcess(process.Handle);
-                    if (status != 0) throw new InvalidOperationException($"NtSuspendProcess 回傳 0x{status:X8}");
+                    if (status != 0) throw new InvalidOperationException(Loc.T($"NtSuspendProcess 回傳 0x{status:X8}", $"NtSuspendProcess returned 0x{status:X8}"));
                     suspendedProcesses.Add(process);
                     DiagnosticsLog.Write($"已暫停 Gigabyte 背景燈效程序：GBT_DL_LIB ({process.Id})");
                 }
                 catch (Exception ex)
                 {
                     process.Dispose();
-                    errors.Add("無法暫停 Gigabyte 背景燈效程序：" + ex.Message);
+                    errors.Add(Loc.T("無法暫停 Gigabyte 背景燈效程序：", "Could not suspend the Gigabyte background lighting process: ") + ex.Message);
                 }
             }
 
@@ -119,7 +119,7 @@ public sealed class RgbConflictManager
                     DiagnosticsLog.Write($"已恢復 RGB 服務：{serviceName}");
                     stoppedServices.RemoveAt(i);
                 }
-                else errors.Add($"無法啟動 {serviceName}：{result.Message}");
+                else errors.Add(Loc.T($"無法啟動 {serviceName}：{result.Message}", $"Could not start {serviceName}: {result.Message}"));
             }
 
             for (var i = suspendedProcesses.Count - 1; i >= 0; i--)
@@ -130,7 +130,7 @@ public sealed class RgbConflictManager
                     if (!process.HasExited)
                     {
                         var status = NtResumeProcess(process.Handle);
-                        if (status != 0) throw new InvalidOperationException($"NtResumeProcess 回傳 0x{status:X8}");
+                        if (status != 0) throw new InvalidOperationException(Loc.T($"NtResumeProcess 回傳 0x{status:X8}", $"NtResumeProcess returned 0x{status:X8}"));
                         DiagnosticsLog.Write($"已恢復 Gigabyte 背景燈效程序：GBT_DL_LIB ({process.Id})");
                     }
                     process.Dispose();
@@ -138,7 +138,7 @@ public sealed class RgbConflictManager
                 }
                 catch (Exception ex)
                 {
-                    errors.Add("無法恢復 Gigabyte 背景燈效程序：" + ex.Message);
+                    errors.Add(Loc.T("無法恢復 Gigabyte 背景燈效程序：", "Could not resume the Gigabyte background lighting process: ") + ex.Message);
                 }
             }
 
@@ -181,19 +181,19 @@ public sealed class RgbConflictManager
             CreateNoWindow = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true
-        }) ?? throw new InvalidOperationException("無法執行 Windows 服務控制程式。");
+        }) ?? throw new InvalidOperationException(Loc.T("無法執行 Windows 服務控制程式。", "Could not run the Windows service control utility."));
 
         var outputTask = process.StandardOutput.ReadToEndAsync();
         var errorTask = process.StandardError.ReadToEndAsync();
         if (!process.WaitForExit(10000))
         {
             process.Kill(entireProcessTree: true);
-            return (-1, "服務操作逾時");
+            return (-1, Loc.T("服務操作逾時", "Service operation timed out"));
         }
 
         Task.WaitAll(outputTask, errorTask);
         var message = string.Join(" ", outputTask.Result, errorTask.Result)
             .Replace('\r', ' ').Replace('\n', ' ').Trim();
-        return (process.ExitCode, string.IsNullOrWhiteSpace(message) ? $"sc.exe 結束碼 {process.ExitCode}" : message);
+        return (process.ExitCode, string.IsNullOrWhiteSpace(message) ? Loc.T($"sc.exe 結束碼 {process.ExitCode}", $"sc.exe exit code {process.ExitCode}") : message);
     }
 }

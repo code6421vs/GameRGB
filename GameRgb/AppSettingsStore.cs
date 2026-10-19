@@ -5,6 +5,7 @@ namespace GameRgb;
 
 public sealed class AppSettings
 {
+ public AppLanguage Language{get;set;}=System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("zh",StringComparison.OrdinalIgnoreCase)?AppLanguage.TraditionalChinese:AppLanguage.English;
  public string Host{get;set;}="127.0.0.1";
  public int Port{get;set;}=6742;
  public LightingMode Mode{get;set;}=LightingMode.ThreeBand;

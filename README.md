@@ -1,5 +1,7 @@
 # GameRGB
 
+**繁體中文** | [English](README.en.md)
+
 GameRGB 是 Windows 上的音訊反應式 RGB 控制器。它使用 NAudio 分析系統或指定程序的輸出音訊，再透過 OpenRGB SDK Server 控制主機板、ARGB 風扇、顯示卡與滑鼠等裝置。
 
 > 本 repository **不包含** OpenRGB、PawnIO 或其他非 NuGet 二進位檔。`setup.ps1` 會從官方發布來源下載固定版本、驗證 SHA-256，再建立可執行的發佈目錄。
@@ -9,6 +11,7 @@ GameRGB 是 Windows 上的音訊反應式 RGB 控制器。它使用 NAudio 分�
 - WASAPI 程序或全系統音訊擷取，搭配低／中／高頻 FFT 分析。
 - 三頻區段、彩色 VU、單色／漸層整體脈動、音量環及固定色彩模式。
 - 方向、顏色、增幅、餘暉、FPS、音訊來源及視窗位置／大小自動保存。
+- 介面可即時切換繁體中文與 English；語系會自動保存，首次啟動則跟隨 Windows 顯示語言。
 - 自動啟動本機 OpenRGB SDK Server，並在正常離開時還原裝置與 RGB 軟體。
 - 首次啟動檢查 PawnIO；只有使用者同意後才會以系統管理員權限安裝。
 

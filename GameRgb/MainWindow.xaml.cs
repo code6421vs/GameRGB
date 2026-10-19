@@ -10,6 +10,7 @@ using System.Windows.Threading;
 namespace GameRgb;
 public partial class MainWindow:Window
 {
+ static string T(string zh,string en)=>Loc.T(zh,en);
  const int DwmUseImmersiveDarkMode=20,DwmWindowCornerPreference=33,DwmSystemBackdropType=38;const int DwmRound=2,DwmMica=2;
  [DllImport("dwmapi.dll")]static extern int DwmSetWindowAttribute(IntPtr window,int attribute,ref int value,int size);
  readonly AudioCaptureService audio=new();readonly OpenRgbService rgb=new();readonly RgbConflictManager conflicts=new();readonly OpenRgbHostManager openRgbHost=new();readonly HardwarePrerequisiteService prerequisites=new();readonly LightingEngine engine;
@@ -18,8 +19,8 @@ public partial class MainWindow:Window
  public ObservableCollection<DeviceItem> Devices{get;}=[];public ObservableCollection<ProcessItem> Processes{get;}=[];
  public MainWindow()
  {
-  InitializeComponent();engine=new(audio,rgb);DataContext=this;settingsSaveTimer.Tick+=SettingsSaveTimer_Tick;
-  RefreshProcesses();RestoreSettings(settingsStore.Load());settingsReady=true;ApplyColorStyleVisibility();UpdateColorPreview();
+  var savedSettings=settingsStore.Load();Loc.SetLanguage(savedSettings.Language);InitializeComponent();engine=new(audio,rgb);DataContext=this;settingsSaveTimer.Tick+=SettingsSaveTimer_Tick;
+  RefreshProcesses();RestoreSettings(savedSettings);settingsReady=true;ApplyColorStyleVisibility();UpdateColorPreview();
   SourceInitialized+=Window_SourceInitialized;LocationChanged+=WindowBounds_Changed;SizeChanged+=WindowBounds_Changed;StateChanged+=WindowBounds_Changed;Loaded+=Window_Loaded;
  }
  void Window_SourceInitialized(object? sender,EventArgs e)
@@ -45,35 +46,35 @@ public partial class MainWindow:Window
    Height=Math.Min(950,Math.Max(MinHeight,workArea.Height*.84));
   }
   if(restoreMaximized)WindowState=WindowState.Maximized;
-  ConnectButton.IsEnabled=false;Status("正在準備硬體…","#FBBF24");
+  ConnectButton.IsEnabled=false;Status(T("正在準備硬體…","Preparing hardware…"),"#FBBF24");
   try
   {
    var prerequisiteMessage=await prerequisites.EnsurePawnIoAsync(this);if(closing)return;
-   Status("正在釋放 RGB 控制權…","#FBBF24");
+   Status(T("正在釋放 RGB 控制權…","Releasing RGB control…"),"#FBBF24");
    var errors=await Task.Run(()=>conflicts.SuspendAsync());
-   if(errors.Count>0)throw new InvalidOperationException("無法暫停衝突的 RGB 軟體："+string.Join("；",errors));
-   if(!int.TryParse(PortBox.Text,out int port)||port is<1 or>65535)throw new InvalidOperationException("連接埠必須介於 1 到 65535。");
-   var host=HostBox.Text.Trim();Status("正在啟動 OpenRGB…","#FBBF24");
+   if(errors.Count>0)throw new InvalidOperationException(T("無法暫停衝突的 RGB 軟體：","Could not suspend conflicting RGB software: ")+string.Join(T("；","; "),errors));
+   if(!int.TryParse(PortBox.Text,out int port)||port is<1 or>65535)throw new InvalidOperationException(T("連接埠必須介於 1 到 65535。","Port must be between 1 and 65535."));
+   var host=HostBox.Text.Trim();Status(T("正在啟動 OpenRGB…","Starting OpenRGB…"),"#FBBF24");
    var hostMessage=await openRgbHost.EnsureServerAsync(host,port,lifetimeCancellation.Token);if(closing)return;
-   var found=ConnectCore(host,port);Status($"已連線 · {found.Count} 個裝置","#22C55E");
-   MessageText.Text=$"{prerequisiteMessage} {hostMessage} 已自動掃描 {found.Count} 個 RGB 裝置。";
+   var found=ConnectCore(host,port);Status(T($"已連線 · {found.Count} 個裝置",$"Connected · {found.Count} devices"),"#22C55E");
+   MessageText.Text=$"{prerequisiteMessage} {hostMessage} "+T($"已自動掃描 {found.Count} 個 RGB 裝置。",$"Automatically scanned {found.Count} RGB devices.");
   }
   catch(OperationCanceledException)when(closing){}
-  catch(Exception ex){Status("啟動失敗","#EF4444");MessageText.Text="無法準備 RGB 硬體："+ex.Message;}
+  catch(Exception ex){Status(T("啟動失敗","Startup failed"),"#EF4444");MessageText.Text=T("無法準備 RGB 硬體：","Could not prepare RGB hardware: ")+ex.Message;}
   finally{ConnectButton.IsEnabled=true;}
  }
  async void Connect_Click(object sender,RoutedEventArgs e)
  {
   try
   {
-   if(!int.TryParse(PortBox.Text,out int port)||port is<1 or>65535)throw new InvalidOperationException("連接埠必須介於 1 到 65535。");
-   ConnectButton.IsEnabled=false;Status("正在啟動 OpenRGB…","#FBBF24");
+   if(!int.TryParse(PortBox.Text,out int port)||port is<1 or>65535)throw new InvalidOperationException(T("連接埠必須介於 1 到 65535。","Port must be between 1 and 65535."));
+   ConnectButton.IsEnabled=false;Status(T("正在啟動 OpenRGB…","Starting OpenRGB…"),"#FBBF24");
    await openRgbHost.EnsureServerAsync(HostBox.Text.Trim(),port,lifetimeCancellation.Token);
    var found=ConnectCore(HostBox.Text.Trim(),port);
-   StartButton.IsEnabled=TestButton.IsEnabled=Devices.Count>0;Status($"已連線 · {Devices.Count} 個裝置","#22C55E");
+   StartButton.IsEnabled=TestButton.IsEnabled=Devices.Count>0;Status(T($"已連線 · {Devices.Count} 個裝置",$"Connected · {Devices.Count} devices"),"#22C55E");
    var conflict=RgbConflictWarning();
-   MessageText.Text=conflict??(Devices.Count>0?"可先執行燈效測試，再選擇 Spotify 或其他音訊來源。":"OpenRGB 已連線，但沒有偵測到 RGB 裝置。");
-  }catch(Exception ex){StartButton.IsEnabled=TestButton.IsEnabled=false;Status("連線失敗","#EF4444");MessageText.Text="無法連到 OpenRGB："+ex.Message;}
+   MessageText.Text=conflict??(Devices.Count>0?T("可先執行燈效測試，再選擇 Spotify 或其他音訊來源。","Run the effect test first, then select Spotify or another audio source."):T("OpenRGB 已連線，但沒有偵測到 RGB 裝置。","OpenRGB is connected, but no RGB devices were detected."));
+  }catch(Exception ex){StartButton.IsEnabled=TestButton.IsEnabled=false;Status(T("連線失敗","Connection failed"),"#EF4444");MessageText.Text=T("無法連到 OpenRGB：","Could not connect to OpenRGB: ")+ex.Message;}
   finally{ConnectButton.IsEnabled=true;}
  }
  IReadOnlyList<DeviceItem> ConnectCore(string host,int port)
@@ -88,14 +89,14 @@ public partial class MainWindow:Window
   try
   {
    Controls(true);var sessionCancellation=new CancellationTokenSource();cancellation=sessionCancellation;var token=sessionCancellation.Token;
-   Status("正在接管 RGB…","#FBBF24");var conflictErrors=await Task.Run(()=>conflicts.SuspendAsync());token.ThrowIfCancellationRequested();
-   if(conflictErrors.Count>0)throw new InvalidOperationException(string.Join("；",conflictErrors));
-   Status("啟動中…","#FBBF24");await Task.Run(()=>rgb.Prepare(ids));token.ThrowIfCancellationRequested();
+   Status(T("正在接管 RGB…","Taking control of RGB…"),"#FBBF24");var conflictErrors=await Task.Run(()=>conflicts.SuspendAsync());token.ThrowIfCancellationRequested();
+   if(conflictErrors.Count>0)throw new InvalidOperationException(string.Join(T("；","; "),conflictErrors));
+   Status(T("啟動中…","Starting…"),"#FBBF24");await Task.Run(()=>rgb.Prepare(ids));token.ThrowIfCancellationRequested();
    await Task.Run(async()=>await audio.StartAsync(process.Id));token.ThrowIfCancellationRequested();
    running=engine.RunAsync(ids,SelectedFps(),()=>Volatile.Read(ref liveGain),()=>Volatile.Read(ref liveSmoothing),SelectedMode(),SelectedPaint(),SelectedDirection(),UpdateMeters,token);
-   Status("燈效運作中","#22C55E");MessageText.Text=process.Id is null?"正在分析整台電腦輸出。":$"正在分析 {process.Name} 的音訊。";
+   Status(T("燈效運作中","Effect running"),"#22C55E");MessageText.Text=process.Id is null?T("正在分析整台電腦輸出。","Analyzing all system output."):T($"正在分析 {process.Name} 的音訊。",$"Analyzing audio from {process.Name}.");
    _=WatchAsync(running);
-  }catch(Exception ex){await StopAsync(true);Status("啟動失敗","#EF4444");MessageText.Text="無法啟動燈效："+ex.Message;}
+  }catch(Exception ex){await StopAsync(true);Status(T("啟動失敗","Startup failed"),"#EF4444");MessageText.Text=T("無法啟動燈效：","Could not start the effect: ")+ex.Message;}
  }
  async void Test_Click(object sender,RoutedEventArgs e)
  {
@@ -103,18 +104,18 @@ public partial class MainWindow:Window
   try
   {
    Controls(true);var sessionCancellation=new CancellationTokenSource();cancellation=sessionCancellation;var token=sessionCancellation.Token;
-   Status("正在接管 RGB…","#FBBF24");var conflictErrors=await Task.Run(()=>conflicts.SuspendAsync());token.ThrowIfCancellationRequested();
-   if(conflictErrors.Count>0)throw new InvalidOperationException(string.Join("；",conflictErrors));
-   Status("測試模式","#A78BFA");await Task.Run(()=>rgb.Prepare(ids));token.ThrowIfCancellationRequested();
+   Status(T("正在接管 RGB…","Taking control of RGB…"),"#FBBF24");var conflictErrors=await Task.Run(()=>conflicts.SuspendAsync());token.ThrowIfCancellationRequested();
+   if(conflictErrors.Count>0)throw new InvalidOperationException(string.Join(T("；","; "),conflictErrors));
+   Status(T("測試模式","Test mode"),"#A78BFA");await Task.Run(()=>rgb.Prepare(ids));token.ThrowIfCancellationRequested();
    running=engine.RunTestAsync(ids,SelectedFps(),SelectedMode(),SelectedPaint(),SelectedDirection(),UpdateMeters,token);
-   MessageText.Text="測試循環：低頻紅 → 中頻綠 → 高頻藍 → 全頻彩色。";
+   MessageText.Text=T("測試循環：低頻紅 → 中頻綠 → 高頻藍 → 全頻彩色。","Test cycle: bass red → mid green → treble blue → full-spectrum colors.");
    _=WatchAsync(running);
-  }catch(Exception ex){await StopAsync(true);Status("測試失敗","#EF4444");MessageText.Text="無法啟動測試："+ex.Message;}
+  }catch(Exception ex){await StopAsync(true);Status(T("測試失敗","Test failed"),"#EF4444");MessageText.Text=T("無法啟動測試：","Could not start the test: ")+ex.Message;}
  }
  int[]? SelectedIds()
  {
   var ids=Devices.Where(x=>x.IsSelected).Select(x=>x.Id).ToArray();
-  if(ids.Length>0)return ids;MessageText.Text="請至少勾選一個 RGB 裝置。";return null;
+  if(ids.Length>0)return ids;MessageText.Text=T("請至少勾選一個 RGB 裝置。","Select at least one RGB device.");return null;
  }
  int SelectedFps()=>int.Parse(((ComboBoxItem)FpsCombo.SelectedItem).Tag.ToString()!);
  LightingMode SelectedMode()=>Enum.Parse<LightingMode>(((ComboBoxItem)ModeCombo.SelectedItem).Tag.ToString()!);
@@ -155,15 +156,24 @@ public partial class MainWindow:Window
   var start=System.Windows.Media.Color.FromRgb(primaryColor.Red,primaryColor.Green,primaryColor.Blue);
   var end=System.Windows.Media.Color.FromRgb(secondaryColor.Red,secondaryColor.Green,secondaryColor.Blue);
   SingleColorPreview.Background=new SolidColorBrush(start);
-  SingleColorText.Text=$"主色  #{primaryColor.Red:X2}{primaryColor.Green:X2}{primaryColor.Blue:X2}";
+  SingleColorText.Text=T("主色  ","Primary  ")+$"#{primaryColor.Red:X2}{primaryColor.Green:X2}{primaryColor.Blue:X2}";
   GradientStartPreview.Background=new SolidColorBrush(start);
-  GradientStartText.Text=$"起始  #{primaryColor.Red:X2}{primaryColor.Green:X2}{primaryColor.Blue:X2}";
+  GradientStartText.Text=T("起始  ","Start  ")+$"#{primaryColor.Red:X2}{primaryColor.Green:X2}{primaryColor.Blue:X2}";
   GradientEndPreview.Background=new SolidColorBrush(end);
-  GradientEndText.Text=$"結束  #{secondaryColor.Red:X2}{secondaryColor.Green:X2}{secondaryColor.Blue:X2}";
+  GradientEndText.Text=T("結束  ","End  ")+$"#{secondaryColor.Red:X2}{secondaryColor.Green:X2}{secondaryColor.Blue:X2}";
  }
  void GainSlider_ValueChanged(object sender,RoutedPropertyChangedEventArgs<double> e){Volatile.Write(ref liveGain,(float)e.NewValue);ScheduleSettingsSave();}
  void SmoothSlider_ValueChanged(object sender,RoutedPropertyChangedEventArgs<double> e){Volatile.Write(ref liveSmoothing,(float)e.NewValue);ScheduleSettingsSave();}
  void Settings_Changed(object sender,RoutedEventArgs e)=>ScheduleSettingsSave();
+ void Language_Changed(object sender,SelectionChangedEventArgs e)
+ {
+  if(LanguageCombo.SelectedItem is not ComboBoxItem item||!Enum.TryParse<AppLanguage>(item.Tag?.ToString(),out var language))return;
+  Loc.SetLanguage(language);UpdateColorPreview();
+  if(!settingsReady)return;
+  RefreshProcesses();
+  Status(running is not null?T("燈效運作中","Effect running"):Devices.Count>0?T($"已連線 · {Devices.Count} 個裝置",$"Connected · {Devices.Count} devices"):T("尚未連線","Not connected"),running is not null||Devices.Count>0?"#22C55E":"#64748B");
+  MessageText.Text=T("介面語言已切換為繁體中文。","Interface language changed to English.");ScheduleSettingsSave();
+ }
  void WindowBounds_Changed(object? sender,EventArgs e)=>ScheduleSettingsSave();
  void ScheduleSettingsSave()
  {
@@ -172,6 +182,7 @@ public partial class MainWindow:Window
  void SettingsSaveTimer_Tick(object? sender,EventArgs e){settingsSaveTimer.Stop();SaveSettingsNow();}
  void RestoreSettings(AppSettings settings)
  {
+  SelectByTag(LanguageCombo,settings.Language.ToString());
   HostBox.Text=string.IsNullOrWhiteSpace(settings.Host)?"127.0.0.1":settings.Host;
   PortBox.Text=(settings.Port is>=1 and<=65535?settings.Port:6742).ToString();
   SelectByTag(ModeCombo,Enum.IsDefined(settings.Mode)?settings.Mode.ToString():LightingMode.ThreeBand.ToString());
@@ -205,13 +216,13 @@ public partial class MainWindow:Window
   if(!settingsReady)return;
   int port=int.TryParse(PortBox.Text,out var parsed)&&parsed is>=1 and<=65535?parsed:6742;
   var bounds=WindowState==WindowState.Normal?new Rect(Left,Top,ActualWidth,ActualHeight):RestoreBounds;
-  settingsStore.Save(new(){Host=HostBox.Text.Trim(),Port=port,Mode=SelectedMode(),Direction=SelectedDirection(),IsGradient=GradientColorStyle.IsChecked==true,PrimaryColor=primaryColor,SecondaryColor=secondaryColor,Gain=(float)GainSlider.Value,Smoothing=(float)SmoothSlider.Value,Fps=SelectedFps(),ProcessName=(ProcessCombo.SelectedItem as ProcessItem)?.Name,WindowLeft=bounds.Left,WindowTop=bounds.Top,WindowWidth=bounds.Width,WindowHeight=bounds.Height,WindowMaximized=WindowState==WindowState.Maximized});
+  settingsStore.Save(new(){Language=Loc.Language,Host=HostBox.Text.Trim(),Port=port,Mode=SelectedMode(),Direction=SelectedDirection(),IsGradient=GradientColorStyle.IsChecked==true,PrimaryColor=primaryColor,SecondaryColor=secondaryColor,Gain=(float)GainSlider.Value,Smoothing=(float)SmoothSlider.Value,Fps=SelectedFps(),ProcessName=(ProcessCombo.SelectedItem as ProcessItem)?.Name,WindowLeft=bounds.Left,WindowTop=bounds.Top,WindowWidth=bounds.Width,WindowHeight=bounds.Height,WindowMaximized=WindowState==WindowState.Maximized});
  }
  async Task WatchAsync(Task task)
  {
   try{await task;}catch(OperationCanceledException){}catch(Exception ex)
   {
-   Status("燈效錯誤","#EF4444");MessageText.Text=$"更新失敗：{ex.Message}。正在還原原始燈效。";
+   Status(T("燈效錯誤","Effect error"),"#EF4444");MessageText.Text=T($"更新失敗：{ex.Message}。正在還原原始燈效。",$"Update failed: {ex.Message}. Restoring the original lighting state.");
    await StopAsync(true);
   }
  }
@@ -219,7 +230,7 @@ public partial class MainWindow:Window
  void Refresh_Click(object sender,RoutedEventArgs e)=>RefreshProcesses();
  void RefreshProcesses()
  {
-  int? old=(ProcessCombo.SelectedItem as ProcessItem)?.Id;var list=new List<ProcessItem>{new(null,"整台電腦輸出（所有程式）")};
+  int? old=(ProcessCombo.SelectedItem as ProcessItem)?.Id;var list=new List<ProcessItem>{new(null,T("整台電腦輸出（所有程式）","All system output (all applications)"))};
   foreach(var p in Process.GetProcesses())try{if(p.Id!=Environment.ProcessId&&!string.IsNullOrWhiteSpace(p.MainWindowTitle))list.Add(new(p.Id,p.ProcessName));}catch{}finally{p.Dispose();}
   Processes.Clear();foreach(var p in list.DistinctBy(x=>x.Id).OrderBy(x=>x.Id is not null).ThenBy(x=>x.Name))Processes.Add(p);
   ProcessCombo.SelectedItem=Processes.FirstOrDefault(x=>x.Id==old)??Processes[0];
@@ -229,26 +240,26 @@ public partial class MainWindow:Window
   DiagnosticsLog.Write("收到停止要求");await stopGate.WaitAsync();
   try
   {
-   StopButton.IsEnabled=false;Status(restore?"停止並還原中…":"停止中…","#FBBF24");
+   StopButton.IsEnabled=false;Status(restore?T("停止並還原中…","Stopping and restoring…"):T("停止中…","Stopping…"),"#FBBF24");
    var errors=new List<string>();var c=Interlocked.Exchange(ref cancellation,null);var task=Interlocked.Exchange(ref running,null);
    try{c?.Cancel();DiagnosticsLog.Write("已送出取消要求");}catch(ObjectDisposedException){}
    if(task is not null)
    {
     var completed=await Task.WhenAny(task,Task.Delay(TimeSpan.FromSeconds(3)));
-    if(completed==task)try{await task;}catch(OperationCanceledException){}catch(Exception ex){errors.Add("燈效工作："+ex.Message);}
+    if(completed==task)try{await task;}catch(OperationCanceledException){}catch(Exception ex){errors.Add(T("燈效工作：","Lighting task: ")+ex.Message);}
     else
     {
      var abortTask=rgb.AbortConnectionAsync();await Task.WhenAny(abortTask,Task.Delay(TimeSpan.FromSeconds(2)));
-     errors.Add("停止更新逾時，已重設 OpenRGB 連線");await Task.WhenAny(task,Task.Delay(TimeSpan.FromMilliseconds(500)));
+     errors.Add(T("停止更新逾時，已重設 OpenRGB 連線","Timed out stopping updates; the OpenRGB connection was reset"));await Task.WhenAny(task,Task.Delay(TimeSpan.FromMilliseconds(500)));
     }
    }
    c?.Dispose();
    try
    {
     DiagnosticsLog.Write("開始停止音訊");var audioTask=Task.Run(async()=>await audio.StopAsync());var completed=await Task.WhenAny(audioTask,Task.Delay(TimeSpan.FromSeconds(4)));
-    if(completed==audioTask){await audioTask;DiagnosticsLog.Write("音訊已停止");}else{errors.Add("停止音訊擷取逾時");DiagnosticsLog.Write("停止音訊逾時");}
+    if(completed==audioTask){await audioTask;DiagnosticsLog.Write("音訊已停止");}else{errors.Add(T("停止音訊擷取逾時","Timed out stopping audio capture"));DiagnosticsLog.Write("停止音訊逾時");}
    }
-   catch(Exception ex){errors.Add("音訊擷取："+ex.Message);}
+   catch(Exception ex){errors.Add(T("音訊擷取：","Audio capture: ")+ex.Message);}
    if(restore)try
    {
     DiagnosticsLog.Write("開始載入 OpenRGB 還原 Profile");var restoreTask=Task.Run(rgb.Restore);var completed=await Task.WhenAny(restoreTask,Task.Delay(TimeSpan.FromSeconds(8)));
@@ -256,18 +267,18 @@ public partial class MainWindow:Window
     else
     {
      var abortTask=rgb.AbortConnectionAsync();await Task.WhenAny(abortTask,Task.Delay(TimeSpan.FromSeconds(2)));
-     errors.Add("OpenRGB Profile 還原逾時，已中斷連線");
+     errors.Add(T("OpenRGB Profile 還原逾時，已中斷連線","Timed out restoring the OpenRGB profile; connection closed"));
     }
    }
-   catch(Exception ex){errors.Add("OpenRGB 還原："+ex.Message);}
+   catch(Exception ex){errors.Add(T("OpenRGB 還原：","OpenRGB restore: ")+ex.Message);}
    if(restore)try
    {
     DiagnosticsLog.Write("開始恢復廠商 RGB 軟體");errors.AddRange(await Task.Run(()=>conflicts.RestoreAsync()));
    }
-   catch(Exception ex){errors.Add("RGB 軟體恢復："+ex.Message);}
+   catch(Exception ex){errors.Add(T("RGB 軟體恢復：","RGB software restore: ")+ex.Message);}
    Controls(false);BassMeter.Value=MidMeter.Value=TrebleMeter.Value=0;
-   if(errors.Count==0){Status(Devices.Count>0?"已還原":"尚未連線",Devices.Count>0?"#22C55E":"#64748B");if(restore)MessageText.Text="燈效已停止並還原；OpenRGB 連線會保留到視窗關閉，可直接再次開始。";}
-   else{Status("部分還原失敗","#EF4444");MessageText.Text="無法完整還原："+string.Join("；",errors);}
+   if(errors.Count==0){Status(Devices.Count>0?T("已還原","Restored"):T("尚未連線","Not connected"),Devices.Count>0?"#22C55E":"#64748B");if(restore)MessageText.Text=T("燈效已停止並還原；OpenRGB 連線會保留到視窗關閉，可直接再次開始。","The effect was stopped and restored. The OpenRGB connection remains available until the window closes.");}
+   else{Status(T("部分還原失敗","Partial restore failure"),"#EF4444");MessageText.Text=T("無法完整還原：","Could not fully restore: ")+string.Join(T("；","; "),errors);}
   }
   finally{DiagnosticsLog.Write("停止流程結束");stopGate.Release();}
  }
@@ -277,9 +288,9 @@ public partial class MainWindow:Window
  static string? RgbConflictWarning()
  {
   static int Count(string name){var items=Process.GetProcessesByName(name);try{return items.Length;}finally{foreach(var item in items)item.Dispose();}}
-  var warnings=new List<string>();int openRgb=Count("OpenRGB");if(openRgb>1)warnings.Add($"偵測到 {openRgb} 個 OpenRGB 程序");
-  if(Count("lghub_agent")>0)warnings.Add("Logitech G HUB 仍在執行");
-  return warnings.Count==0?null:"可能發生 RGB 控制衝突："+string.Join("；",warnings)+"。G502 若維持預設燈效，請只保留一個 OpenRGB，並完全退出 G HUB。";
+  var warnings=new List<string>();int openRgb=Count("OpenRGB");if(openRgb>1)warnings.Add(T($"偵測到 {openRgb} 個 OpenRGB 程序",$"Detected {openRgb} OpenRGB processes"));
+  if(Count("lghub_agent")>0)warnings.Add(T("Logitech G HUB 仍在執行","Logitech G HUB is still running"));
+  return warnings.Count==0?null:T("可能發生 RGB 控制衝突：","Possible RGB control conflict: ")+string.Join(T("；","; "),warnings)+T("。G502 若維持預設燈效，請只保留一個 OpenRGB，並完全退出 G HUB。",". If the G502 keeps its default effect, leave only one OpenRGB process running and fully exit G HUB.");
  }
  protected override async void OnClosing(CancelEventArgs e)
  {

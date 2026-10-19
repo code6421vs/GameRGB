@@ -1,5 +1,7 @@
 # Third-Party Notices
 
+**繁體中文** | [English](THIRD_PARTY.en.md)
+
 GameRGB 本身採 GPL-3.0-or-later。下列元件由各自作者提供，保留原著作權與授權條款；GameRGB 的授權不會取代第三方授權。Repository 不提交 OpenRGB 或 PawnIO 二進位檔，`setup.ps1` 僅從所列官方來源下載未修改的發布檔。
 
 ## OpenRGB 1.1
