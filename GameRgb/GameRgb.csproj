@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+<PropertyGroup><OutputType>WinExe</OutputType><TargetFramework>net10.0-windows10.0.19041.0</TargetFramework><UseWPF>true</UseWPF><UseWindowsForms>true</UseWindowsForms><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><ApplicationManifest>app.manifest</ApplicationManifest><ApplicationIcon>Assets\GameRgb.ico</ApplicationIcon></PropertyGroup>
+<ItemGroup><PackageReference Include="NAudio" Version="3.2.0" /><PackageReference Include="OpenRGB.NET" Version="3.1.1" /></ItemGroup>
+<ItemGroup>
+  <Resource Include="Assets\GameRgb.ico" />
+  <Resource Include="Assets\GameRgb.png" />
+  <Resource Include="Assets\Modes\*.png" />
+  <Content Include="OpenRGB\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  <Content Include="DriverInstallers\PawnIO_setup.exe" Condition="Exists('DriverInstallers\PawnIO_setup.exe')" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  <Content Include="ThirdPartyLicenses\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  <Content Include="..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  <Content Include="..\THIRD_PARTY.md" Link="THIRD_PARTY.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+</ItemGroup>
+</Project>

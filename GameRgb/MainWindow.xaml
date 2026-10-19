@@ -1,0 +1,69 @@
+<Window x:Class="GameRgb.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:GameRgb"
+ Title="GameRGB" Icon="Assets/GameRgb.ico" Width="1280" Height="880" MinWidth="680" MinHeight="600" Background="{StaticResource WindowBackground}" Foreground="White" FontFamily="Segoe UI Variable Text" WindowStartupLocation="CenterScreen">
+<Grid Margin="24">
+<Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+<Canvas Grid.RowSpan="3" IsHitTestVisible="False" Opacity=".28"><Ellipse Width="360" Height="360" Fill="#4C33CCFF" Canvas.Left="-180" Canvas.Top="-210"><Ellipse.Effect><BlurEffect Radius="95"/></Ellipse.Effect></Ellipse><Ellipse Width="420" Height="420" Fill="#45C934FF" Canvas.Right="-180" Canvas.Top="80"><Ellipse.Effect><BlurEffect Radius="120"/></Ellipse.Effect></Ellipse></Canvas>
+<Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+<StackPanel Orientation="Horizontal"><Border Width="54" Height="54" Background="#9A151D31" BorderBrush="#4A5A7D" BorderThickness="1" CornerRadius="16" Margin="0,0,13,0"><Image Source="/GameRgb;component/Assets/GameRgb.png" Width="43" Height="43"/></Border><StackPanel VerticalAlignment="Center"><TextBlock Text="GameRGB" FontSize="31" FontWeight="Bold" Foreground="{StaticResource TitleGradient}"/><TextBlock Text="讓遊戲聲音驅動多彩燈光" Foreground="{StaticResource Muted}" Margin="0,2,0,0"/></StackPanel></StackPanel>
+<Border Grid.Column="1" Background="#D9182032" BorderBrush="#3E4A68" BorderThickness="1" CornerRadius="18" Padding="15,9" VerticalAlignment="Center"><StackPanel Orientation="Horizontal"><Ellipse x:Name="StatusDot" Width="10" Height="10" Fill="#64748B" Margin="0,0,9,0"><Ellipse.Effect><DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="#FFFFFF" Opacity=".35"/></Ellipse.Effect></Ellipse><TextBlock x:Name="StatusText" Text="尚未連線" FontWeight="SemiBold"/></StackPanel></Border>
+</Grid>
+<ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,22,0,16">
+<local:ResponsivePanel MinColumnWidth="460" Gap="18">
+<StackPanel>
+<GroupBox Header="1  OpenRGB"><StackPanel>
+<Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="76"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+<TextBox x:Name="HostBox" Text="127.0.0.1" TextChanged="Settings_Changed"/><TextBox x:Name="PortBox" Grid.Column="1" Text="6742" Margin="8,0" TextChanged="Settings_Changed"/><Button x:Name="ConnectButton" Grid.Column="2" Content="連線 / 掃描" Click="Connect_Click"/>
+</Grid>
+<ListBox ItemsSource="{Binding Devices}" Margin="0,11,0,0" MinHeight="130" Background="#0F131C" BorderBrush="#293244" Foreground="White">
+<ListBox.ItemTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected}" Content="{Binding DisplayName}" Foreground="White" Margin="6"/></DataTemplate></ListBox.ItemTemplate>
+</ListBox></StackPanel></GroupBox>
+<GroupBox Header="2  音訊來源"><StackPanel>
+<Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><ComboBox x:Name="ProcessCombo" ItemsSource="{Binding Processes}" DisplayMemberPath="DisplayName" SelectionChanged="Settings_Changed"/><Button Grid.Column="1" Content="重新整理" Click="Refresh_Click" Margin="8,0,0,0"/></Grid>
+<TextBlock Text="可指定遊戲程序（含子程序），或擷取整台電腦輸出。" Foreground="{StaticResource Muted}" Margin="0,8,0,0"/>
+</StackPanel></GroupBox>
+</StackPanel>
+<StackPanel>
+<GroupBox Header="3  燈效調校"><StackPanel>
+<TextBlock Text="燈效模式"/><ComboBox x:Name="ModeCombo" SelectedIndex="0" Margin="0,5,0,13" SelectionChanged="Settings_Changed">
+<ComboBoxItem Tag="ThreeBand"><StackPanel Orientation="Horizontal"><Image Source="Assets/Modes/ThreeBand.png" Width="26" Height="26" Margin="0,0,9,0"/><TextBlock Text="三頻律動（固定區段）" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+<ComboBoxItem Tag="VuMeter"><StackPanel Orientation="Horizontal"><Image Source="Assets/Modes/VuMeter.png" Width="26" Height="26" Margin="0,0,9,0"/><TextBlock Text="音量條（綠 → 黃 → 紅）" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+<ComboBoxItem Tag="SolidPulse"><StackPanel Orientation="Horizontal"><Image Source="Assets/Modes/SolidPulse.png" Width="26" Height="26" Margin="0,0,9,0"/><TextBlock Text="整體脈動（單色／漸層）" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+<ComboBoxItem Tag="MonoRing"><StackPanel Orientation="Horizontal"><Image Source="Assets/Modes/MonoRing.png" Width="26" Height="26" Margin="0,0,9,0"/><TextBlock Text="單色／漸層音量環" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+<ComboBoxItem Tag="StaticColor"><StackPanel Orientation="Horizontal"><Image Source="Assets/Modes/StaticColor.png" Width="26" Height="26" Margin="0,0,9,0"/><TextBlock Text="固定顏色／漸層（常亮）" VerticalAlignment="Center"/></StackPanel></ComboBoxItem>
+</ComboBox>
+<Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+<StackPanel><TextBlock Text="顏色樣式"/><StackPanel x:Name="ColorStylePanel" Orientation="Horizontal" Margin="0,7,8,0">
+<RadioButton x:Name="SolidColorStyle" GroupName="ColorStyle" IsChecked="True" Checked="ColorStyle_Checked" Margin="0,0,14,0" ToolTip="單色"><StackPanel Orientation="Horizontal"><Ellipse Width="20" Height="20" Fill="#3B82F6" Margin="0,0,6,0"/><TextBlock Text="單色" VerticalAlignment="Center"/></StackPanel></RadioButton>
+<RadioButton x:Name="GradientColorStyle" GroupName="ColorStyle" Checked="ColorStyle_Checked" ToolTip="漸層"><StackPanel Orientation="Horizontal"><Border Width="28" Height="20" CornerRadius="4" Margin="0,0,6,0"><Border.Background><LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5"><GradientStop Color="#3B82F6" Offset="0"/><GradientStop Color="#A855F7" Offset="1"/></LinearGradientBrush></Border.Background></Border><TextBlock Text="漸層" VerticalAlignment="Center"/></StackPanel></RadioButton>
+</StackPanel></StackPanel>
+<StackPanel Grid.Column="1"><TextBlock Text="燈效方向"/><StackPanel x:Name="DirectionPanel" Orientation="Horizontal" Margin="0,7,0,0">
+<RadioButton x:Name="LeftToRightDirection" GroupName="LightingDirection" IsChecked="True" Checked="Settings_Changed" Margin="0,0,14,0" ToolTip="燈光由左往右填充"><StackPanel Orientation="Horizontal"><TextBlock Text="➜" FontSize="22" Foreground="#60A5FA" Margin="0,-5,5,-3"/><TextBlock Text="左到右" VerticalAlignment="Center"/></StackPanel></RadioButton>
+<RadioButton x:Name="RightToLeftDirection" GroupName="LightingDirection" Checked="Settings_Changed" ToolTip="燈光由右往左填充"><StackPanel Orientation="Horizontal"><TextBlock Text="⬅" FontSize="18" Foreground="#A78BFA" Margin="0,-3,5,-2"/><TextBlock Text="右到左" VerticalAlignment="Center"/></StackPanel></RadioButton>
+</StackPanel></StackPanel>
+</Grid>
+<StackPanel x:Name="ColorPalettePanel" Margin="0,0,0,13">
+<Grid x:Name="SingleColorPanel"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition/></Grid.ColumnDefinitions><Button Tag="Primary" Click="ColorSwatch_Click" Padding="0" Background="Transparent" ToolTip="點選以開啟調色盤"><Border x:Name="SingleColorPreview" Width="34" Height="27" CornerRadius="5" Background="#3B82F6" BorderBrush="#CBD5E1" BorderThickness="1"/></Button><TextBlock x:Name="SingleColorText" Grid.Column="1" Text="主色  #3B82F6" VerticalAlignment="Center" Margin="9,0" Foreground="{StaticResource Muted}"/></Grid>
+<Grid x:Name="GradientColorPanel" Visibility="Collapsed"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+<Button Tag="Primary" Click="ColorSwatch_Click" Padding="0" Background="Transparent" BorderThickness="0" ToolTip="選擇漸層起始色" Margin="0,0,6,0" HorizontalContentAlignment="Stretch"><Border x:Name="GradientStartPreview" Height="42" CornerRadius="10" Background="#3B82F6" BorderBrush="#A9C7FF" BorderThickness="1" Padding="8"><Border.Effect><DropShadowEffect BlurRadius="10" ShadowDepth="0" Color="#3B82F6" Opacity=".35"/></Border.Effect><Border Background="#99070B14" CornerRadius="7" Padding="10,5" HorizontalAlignment="Stretch"><TextBlock x:Name="GradientStartText" Text="起始  #3B82F6" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/></Border></Border></Button>
+<Button Grid.Column="1" Tag="Secondary" Click="ColorSwatch_Click" Padding="0" Background="Transparent" BorderThickness="0" ToolTip="選擇漸層結束色" Margin="6,0,0,0" HorizontalContentAlignment="Stretch"><Border x:Name="GradientEndPreview" Height="42" CornerRadius="10" Background="#A855F7" BorderBrush="#D8B4FE" BorderThickness="1" Padding="8"><Border.Effect><DropShadowEffect BlurRadius="10" ShadowDepth="0" Color="#A855F7" Opacity=".35"/></Border.Effect><Border Background="#99070B14" CornerRadius="7" Padding="10,5" HorizontalAlignment="Stretch"><TextBlock x:Name="GradientEndText" Text="結束  #A855F7" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/></Border></Border></Button>
+</Grid>
+</StackPanel>
+<TextBlock Text="音訊增幅"/><Grid Margin="0,5,0,4"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="52"/></Grid.ColumnDefinitions><Slider x:Name="GainSlider" Minimum=".5" Maximum="8" Value="2" ValueChanged="GainSlider_ValueChanged"/><TextBlock Grid.Column="1" Text="{Binding ElementName=GainSlider,Path=Value,StringFormat={}{0:F1}x}" HorizontalAlignment="Right"/></Grid>
+<TextBlock Text="可在運作中即時調整；若燈光長期滿亮不動，請降低增幅。" Foreground="{StaticResource Muted}" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,12"/>
+<TextBlock Text="餘暉"/><Grid Margin="0,5,0,12"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="48"/></Grid.ColumnDefinitions><Slider x:Name="SmoothSlider" Minimum="0" Maximum=".95" Value=".8" ValueChanged="SmoothSlider_ValueChanged"/><TextBlock Grid.Column="1" Text="{Binding ElementName=SmoothSlider,Path=Value,StringFormat={}{0:P0}}" HorizontalAlignment="Right"/></Grid>
+<TextBlock Text="更新率"/><ComboBox x:Name="FpsCombo" SelectedIndex="1" Margin="0,5,0,0" SelectionChanged="Settings_Changed"><ComboBoxItem Content="10 FPS（相容模式）" Tag="10"/><ComboBoxItem Content="20 FPS（建議）" Tag="20"/><ComboBoxItem Content="30 FPS" Tag="30"/><ComboBoxItem Content="60 FPS" Tag="60"/></ComboBox>
+<TextBlock Text="技嘉 5070 Ti 若 Direct 模式不穩，請改用 10 FPS。" Foreground="#FBBF24" TextWrapping="Wrap" Margin="0,8,0,0" FontSize="12"/>
+</StackPanel></GroupBox>
+<GroupBox Header="即時頻段"><StackPanel>
+<TextBlock Text="低頻 / Bass" Foreground="#FCA5A5"/><ProgressBar x:Name="BassMeter" Height="12" Maximum="1" Margin="0,4,0,8" Foreground="#EF4444"/>
+<TextBlock Text="中頻 / Mid" Foreground="#86EFAC"/><ProgressBar x:Name="MidMeter" Height="12" Maximum="1" Margin="0,4,0,8" Foreground="#22C55E"/>
+<TextBlock Text="高頻 / Treble" Foreground="#93C5FD"/><ProgressBar x:Name="TrebleMeter" Height="12" Maximum="1" Margin="0,4,0,0" Foreground="#3B82F6"/>
+</StackPanel></GroupBox>
+</StackPanel>
+</local:ResponsivePanel>
+</ScrollViewer>
+<Border Grid.Row="2" Background="#CC12192A" BorderBrush="#35415D" BorderThickness="1" CornerRadius="16" Padding="14,10"><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+<TextBlock x:Name="MessageText" Text="正在準備 OpenRGB Server…" Foreground="{StaticResource Muted}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+<StackPanel Grid.Column="1" Orientation="Horizontal"><Button x:Name="TestButton" Content="燈效測試" Click="Test_Click" IsEnabled="False" Background="#7C3AED" Margin="0,0,10,0"/><Button x:Name="StopButton" Content="停止 / 還原" Click="Stop_Click" IsEnabled="False" Background="#334155" Margin="0,0,10,0"/><Button x:Name="StartButton" Content="開始燈效" Click="Start_Click" IsEnabled="False" MinWidth="120"/></StackPanel>
+</Grid></Border>
+</Grid></Window>
